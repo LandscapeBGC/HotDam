@@ -1,2 +1,5 @@
 Results/
-Scripts/
+*.Rproj
+*.gitignore
+.Rproj.user
+.Rhistory
