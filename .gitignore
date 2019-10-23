@@ -1,1 +1,5 @@
 Results/
+*.Rproj
+*.gitignore
+.Rproj.user
+.Rhistory
