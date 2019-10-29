@@ -5,11 +5,11 @@
 
 
 ## --- Input Packages
-
+library(dplyr)
 
 ##-- Read in full join table
 
-df <- read.csv(list.files(pattern = "jointbl_NWIS_NOAA_NID.csv", recursive = TRUE, full.names = TRUE),
+df <- read.csv(list.files(pattern = "NWIS_NID_NOAA_Master.csv", recursive = TRUE, full.names = TRUE),
                      header=T,
                      stringsAsFactors=F,
                      colClasses=c("locname"="character"))
@@ -30,9 +30,11 @@ for (i in purpose$Purp_abbv){
     }
   }
   
-  csv <- df %>% filter(df$PURPOSES_NAME==df$PURPOSES_NAME[j])
+  csv <- df %>% filter(df$PURPOSES_NAME==j)
   fn <- paste0(purpose$Purp_name[j],'.csv')
   fp <-  file.path('input',fn)
   write.csv(csv, file = fp )
 }
+
+
   
