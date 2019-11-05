@@ -14,7 +14,7 @@ library(rnoaa)# Retreive NOAA data
 
 file_list <- c("conterm_bas_classif_.txt","conterm_hydro.txt","conterm_hydromod_dams.txt")#list of 'extra' GAGEII datasets of interest
 dam_dis_max <- 10 #max dam distance km
-SW_out_dam <- "input/SW_T_Dam"
+SW_out_dam <- "input/SW_T_Dam_v2"
 SW_out_ref <- "input/SW_T_Ref"
 f_out <- "input/GAGE_NWIS_NOAA_LocData.csv"
 
@@ -26,6 +26,7 @@ GAGE_loc <- read.csv(list.files(pattern = "conterm_basinid.txt", recursive = TRU
                      stringsAsFactors=F,
                      colClasses=c("STAID"="character"))
 
+# Merge with GageII Dataset, based on specified files above
 for (f in file_list){
   df <- read.csv(list.files(pattern = f, recursive = TRUE, full.names = TRUE),
                      header=T,
@@ -33,6 +34,7 @@ for (f in file_list){
                     colClasses=c("STAID"="character"))
   GAGE_loc <- merge(GAGE_loc, df, on = 'STAID')
 }
+
 rm(df)
 # Column name "id" necessary to run NOAA part
 GAGE_loc$id <- GAGE_loc$STAID
@@ -42,15 +44,17 @@ GAGE_loc$id <- GAGE_loc$STAID
 GAGE_loc$NWIS_Tavail <- NaN #Set column for SW Temperature records that are available for download
 
 #make two relevant folders Dam within raw distance and ref locations
-GAGE_Dam <- filter(GAGE_loc, (GAGE_loc$RAW_DIS_NEAREST_DAM < dam_dis_max & GAGE_loc$RAW_DIS_NEAREST_DAM >=0))
+GAGE_Dam <- filter(GAGE_loc, 
+                   (GAGE_loc$RAW_DIS_NEAREST_DAM < dam_dis_max & GAGE_loc$RAW_DIS_NEAREST_DAM >=0 & GAGE_loc$CLASS != "Ref"))
 GAGE_Ref <- filter(GAGE_loc, GAGE_loc$CLASS == "Ref")
 
 for (n in 1:nrow(GAGE_Dam)){
   ID <- GAGE_Dam$id[n]
   #ID <- "01463500" trial run
-  temp_df<- renameNWISColumns(readNWISdv(ID, "00010"))#, #Temperature (C)
+  temp_df<- renameNWISColumns(readNWISdv(ID, "00010"))#, #Mean Temperature (C)
   df <- temp_df
-  if (nrow(df)>(0.75*365)){# at least has 75% of one year worth of temp data
+  
+  if (nrow(df)>(0.75*365*2)){# at least has 75% of two years worth of temp data
     GAGE_Dam$NWIS_Tavail[n] <-  1
     
     #--- also download discharge data if available
@@ -75,6 +79,10 @@ for (n in 1:nrow(GAGE_Dam)){
 # --- Only keep rows with Temp Data
 GAGE_Dam <- filter(GAGE_Dam, NWIS_Tavail== 1)
 GAGE_Dam$id <- GAGE_Dam$locname
+# Save GAGE_Dam_NWIS_Available
+saveRDS(GAGE_Dam, file = file.path(SW_out_dam, "DAM_GAGE_NWISAvail.rds"))
+
+
 
 ## Get NOAA DATA
 #Get a list of all the NOAA stations currently available
