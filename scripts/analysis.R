@@ -1,3 +1,5 @@
+install.packages("here")
+library(here)
 library(dplyr)
 library(ggplot2)
 library(broom)
@@ -5,8 +7,12 @@ library(stats)
 library(tidyverse)
 library(data.table)
 
-setwd("~/HotDam/input/Dam_thermal_regimes")
-Dam_list <- list.files("~/HotDam/input/Dam_thermal_regimes")
+here('input/Dam_thermal_regimes')
+print(wksp)
+#setwd("HotDam/input/Dam_thermal_regimes")
+Dam_list <- list.files()
+
+
 USGs_station_num <- str_sub(Dam_list, end = -8)
 
 setwd("~/HotDam/")
