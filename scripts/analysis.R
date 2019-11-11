@@ -1,4 +1,4 @@
-install.packages("here")
+#install.packages("here")
 library(here)
 library(dplyr)
 library(ggplot2)
@@ -6,35 +6,125 @@ library(broom)
 library(stats)
 library(tidyverse)
 library(data.table)
+#######################################
+start_time <- Sys.time()
+#######################################
 
-here('input/Dam_thermal_regimes')
-print(wksp)
-#setwd("HotDam/input/Dam_thermal_regimes")
-Dam_list <- list.files()
+path1 <- here()
+Orig_file <- read.csv(file.path(path1,'NWIS_NOAA_NID_Eco_clean.csv'))
+
+path2 <- file.path(here(), 'Thermal_metrics.csv') # make copy of NWIS_NOAA_NID_Eco_clean.csv that can be edited
+write.csv(Orig_file, file = path2)
+
+Main_df <- read.csv(file.path(path1,'Thermal_metrics.csv'))
+
+#######################################
+#### Create Thermal Metric Columns #### 
+#######################################
+
+Main_df$pstRcrdCnt <- NaN
+Main_df$pstTmax <- NaN
+Main_df$pstTmin <- NaN
+Main_df$pstTmaxT <- NaN
+Main_df$pstTminT <- NaN
+
+Main_df$preRcrdCnt <- NaN
+Main_df$preTmax <- NaN
+Main_df$preTmin <- NaN
+Main_df$preTmaxT <- NaN
+Main_df$preTminT <- NaN
 
 
-USGs_station_num <- str_sub(Dam_list, end = -8)
+#########################################################
+#### Create Path + List of Post-Construction Records ####
+#########################################################
 
-setwd("~/HotDam/")
-Main_df <- read.csv("NWIS_NID_NOAA_clean.csv", header = T, stringsAsFactors = F)
-Main_df$tmax <- NaN
-Main_df$tmin <- NaN
+path3 <- here('input/Dam_thermal_regimes_post')
+pstDam <- dir(path = path3, pattern = "*.csv")
+pstDam_lst <- str_sub(pstDam, end = -8)
+pstUSGs_St_num <- as.list(pstDam_lst) # create an iterable list of USGS gauges with post construction temperature data
 
-NWIS_Str<- str_split(Main_df$NWIS_ID, pattern = ",")
-NWIS_Str <- paste0("0", NWIS_Str)
+##########################################################################################
+#### Calcuate Thermal Metrics of Post-Contruction Records and populate main dataframe ####
+##########################################################################################
+
+NWIS_Str<- str_split(Main_df$STAID_edt, pattern = ",")
+NWIS_Str <- str_split(str_sub(NWIS_Str, start = 6), pattern = ",")
 
 for (n in 1:length(NWIS_Str)){
-  if (NWIS_Str[n] %in% USGs_station_num == TRUE) {
-    x <- c('~/HotDam/input/Dam_thermal_regimes/thy_tr.csv')
-    NWISsubstitution <- gsub("thy",toString(NWIS_Str[n]), x)  
-    analysis.df <- read.csv(NWISsubstitution)
-    tmax <- max(analysis.df$y)
-    tmin <- min(analysis.df$y)
-    #print(tmax)
-    for (x in 1:length(Main_df)){
-      if (NWIS_Str[n] == paste0("0",toString(Main_df$NWIS_ID[x]))){
-        print('hazzah!')
-        Main_df$tmax[x] <- tmax
-        Main_df$tmin[x] <- tmin}}}}
-#if NWIS_Str[n] %in% Main_df
-#write.csv(Main_df, Main_edit)
+  if (NWIS_Str[n] %in% pstUSGs_St_num == TRUE) {
+    tryCatch(
+      expr = {
+        x <- c(file.path(here('input/Dam_thermal_regimes_post/xyxyxyxy_tr.csv')))
+        NWISsubstitution <- gsub("xyxyxyxy",NWIS_Str[n], x)
+        print(NWISsubstitution)
+        analysis.df <- read.csv(NWISsubstitution)
+        tmax <- max(analysis.df$y)
+        print(tmax)
+        tmin <- min(analysis.df$y)
+        tmax_timing <- analysis.df$x[which.max(analysis.df$y)]
+        tmin_timing <- analysis.df$x[which.min(analysis.df$y)]
+        RcrdCnt <- analysis.df$RcrdCnt[1]
+        print(RcrdCnt)
+        for (z in 1:nrow(Main_df)){
+          if (NWIS_Str[n] == str_sub(Main_df$STAID_edt[z], start = 6)){
+            Main_df$pstRcrdCnt
+            Main_df$pstTmax[z] <- tmax
+            Main_df$pstTmin[z] <- tmin
+            Main_df$pstTmaxT[z] <- tmax_timing
+            Main_df$pstTminT[z] <- tmin_timing
+            Main_df$pstRcrdCnt[z] <- RcrdCnt
+          }}},error = function(cond){
+          message(paste0(NWIS_Str[n]))
+          return(NA)})}}
+
+########################################################
+#### Create Path + List of Pre-Construction Records ####
+########################################################
+
+path4 <- here('input/Dam_thermal_regimes_pre')
+preDam <- dir(path = path4, pattern = "*.csv")
+preDam_lst <- str_sub(preDam, end = -8)
+preUSGs_St_num <- as.list(preDam_lst) # create an iterable list of USGS gauges with post construction temperature data
+
+#########################################################################################
+#### Calcuate Thermal Metrics of Pre-Contruction Records and populate main dataframe ####
+#########################################################################################
+
+NWIS_Str<- str_split(Main_df$STAID_edt, pattern = ",")
+NWIS_Str <- str_split(str_sub(NWIS_Str, start = 6), pattern = ",")
+
+for (n in 1:length(NWIS_Str)){
+  if (NWIS_Str[n] %in% preUSGs_St_num == TRUE) {
+    tryCatch(
+      expr = {
+        x <- c(file.path(here('input/Dam_thermal_regimes_pre/xyxyxyxy_tr.csv')))
+        NWISsubstitution <- gsub("xyxyxyxy",NWIS_Str[n], x)
+        print(NWISsubstitution)
+        analysis.df <- read.csv(NWISsubstitution)
+        tmax <- max(analysis.df$y)
+        print(tmax)
+        tmin <- min(analysis.df$y)
+        tmax_timing <- analysis.df$x[which.max(analysis.df$y)]
+        tmin_timing <- analysis.df$x[which.min(analysis.df$y)]
+        RcrdCnt <- analysis.df$RcrdCnt[1]
+        print(RcrdCnt)
+        for (z in 1:nrow(Main_df)){
+          if (NWIS_Str[n] == str_sub(Main_df$STAID_edt[z], start = 6)){
+            Main_df$preTmax[z] <- tmax
+            Main_df$preTmin[z] <- tmin
+            Main_df$preTmaxT[z] <- tmax_timing
+            Main_df$preTminT[z] <- tmin_timing
+            Main_df$preRcrdCnt[z] <- RcrdCnt
+          }}},error = function(cond){
+            message(paste0(NWIS_Str[n]))
+            return(NA)})}}
+
+#######################################
+write.csv(Main_df, path2)
+#######################################
+end_time <- Sys.time()
+time <- end_time - start_time
+print(time)
+print("Script Complete")
+#######################################
