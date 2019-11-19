@@ -6,6 +6,7 @@ library(broom)
 library(stats)
 library(tidyverse)
 library(data.table)
+
 #######################################
 start_time <- Sys.time()
 #######################################
@@ -33,6 +34,12 @@ Main_df$preTmax <- NaN
 Main_df$preTmin <- NaN
 Main_df$preTmaxT <- NaN
 Main_df$preTminT <- NaN
+
+Main_df$NOAA_TmaxT <- NaN
+Main_df$NOAA_TminT <- NaN
+Main_df$Lag_TmaxT <- NaN
+Main_df$Lag_TminT <- NaN
+Main_df$NOAARcrdCn <- NaN
 
 
 #########################################################
@@ -105,6 +112,7 @@ for (n in 1:length(NWIS_Str)){
         tmax <- max(analysis.df$y)
         print(tmax)
         tmin <- min(analysis.df$y)
+        tmean <- mean(analysis.df$y)
         tmax_timing <- analysis.df$x[which.max(analysis.df$y)]
         tmin_timing <- analysis.df$x[which.min(analysis.df$y)]
         RcrdCnt <- analysis.df$RcrdCnt[1]
@@ -119,6 +127,73 @@ for (n in 1:length(NWIS_Str)){
           }}},error = function(cond){
             message(paste0(NWIS_Str[n]))
             return(NA)})}}
+
+########################################################
+#### Create Path + List of Pre-Construction Records ####
+########################################################
+
+path5 <- here('input/NOAA_thermal_regimes')
+NOAA <- dir(path = path5, pattern = "*.csv")
+NOAA_lst <- str_sub(NOAA, end = -5)
+NOAA_St_num <- as.list(NOAA_lst) # create an iterable list of USGS gauges with post construction temperature data
+
+##############################################################
+#### Calcuate Julian Date of NOAA populate main dataframe ####
+##############################################################
+
+NOAA_Str<- str_split(Main_df$NOAA_ID, pattern = ",")
+NOAA_Str <- str_split(str_sub(NOAA_Str), pattern = ",")
+
+tryCatch(
+  expre = {
+    for (n in 1:length(NOAA_Str)) {
+      for (y in 1:length(NOAA_St_num)){
+        tryCatch(
+          expr = {
+            if (NOAA_Str[[n]] == NOAA_St_num[[y]]){
+              tryCatch(
+                expr = {
+                  x <- c(file.path(here('input/NOAA_thermal_regimes/xyxyxyxy.csv')))
+                  NOAAsubstitution <- gsub("xyxyxyxy",NOAA_St_num[y], x)
+                  print(NOAAsubstitution)
+                  analysis.df <- read.csv(NOAAsubstitution)
+                  tmax <- max(analysis.df$y)
+                  tmin <- min(analysis.df$y)
+                  tmax_timing <- analysis.df$x[which.max(analysis.df$y)]
+                  tmin_timing <- analysis.df$x[which.min(analysis.df$y)]
+                  RcrdCnt <- analysis.df$pstRcrdCnt[1]
+                  Main_df$NOAA_TmaxT[n] <- tmax_timing
+                  Main_df$NOAA_TminT[n] <- tmin_timing
+                  Main_df$Lag_TmaxT[n] <-  Main_df$pstTmaxT[n] - tmax_timing
+                  Main_df$Lag_TminT[n] <- Main_df$pstTminT[n] - tmax_timing
+                  Main_df$NOAARcrdCn[n] <- RcrdCnt
+                }
+                ,error = function(cond){
+                      message(paste0(NOAA_St_num[[y]]))
+                      return(NA)
+                  }
+                )
+              }
+            }
+          ,error = function(cond){
+            message(paste0(NOAA_Str[[n]]))
+            return(NA)
+            }
+          )
+        }
+      }
+    }
+  ,error = function(cond){
+            message(paste0(NOAA_Str[[n]]))
+            return(NA)
+    }
+  )
+
+###################################################################################
+#### Calcuate Thermal Metrics of Reference Records and populate main dataframe ####
+###################################################################################
+
+
 
 #######################################
 write.csv(Main_df, path2)
