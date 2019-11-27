@@ -27,25 +27,25 @@ Main_df <- read.csv(file.path(path1,'Thermal_metrics_11262019.csv'))
 #### Create Thermal Metric Columns #### 
 #######################################
 
-Main_df$pstRcrdCnt <- NaN
-Main_df$pstTmax <- NaN
-Main_df$pstTmin <- NaN
-Main_df$pstTmean <- NaN
-Main_df$pstTmaxT <- NaN
-Main_df$pstTminT <- NaN
+Main_df$pstRcrdCnt <- NA
+Main_df$pstTmax <- NA
+Main_df$pstTmin <- NA
+Main_df$pstTmean <- NA
+Main_df$pstTmaxT <- NA
+Main_df$pstTminT <- NA
 
-Main_df$preRcrdCnt <- NaN
-Main_df$preTmax <- NaN
-Main_df$preTmin <- NaN
-Main_df$preTmean <- NaN
-Main_df$preTmaxT <- NaN
-Main_df$preTminT <- NaN
+Main_df$preRcrdCnt <- NA
+Main_df$preTmax <- NA
+Main_df$preTmin <- NA
+Main_df$preTmean <- NA
+Main_df$preTmaxT <- NA
+Main_df$preTminT <- NA
 
-Main_df$NOAA_TmaxT <- NaN
-Main_df$NOAA_TminT <- NaN
-Main_df$Lag_TmaxT <- NaN
-Main_df$Lag_TminT <- NaN
-Main_df$NOAARcrdCn <- NaN
+Main_df$NOAA_TmaxT <- NA
+Main_df$NOAA_TminT <- NA
+Main_df$Lag_TmaxT <- NA
+Main_df$Lag_TminT <- NA
+Main_df$NOAARcrdCn <- NA
 
 
 #########################################################
