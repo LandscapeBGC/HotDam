@@ -1,4 +1,7 @@
-#install.packages("here")
+install.packages("here")
+install.packages('data.table')
+install.packages('tidyverse')
+install.packages('broom')
 library(here)
 library(dplyr)
 library(ggplot2)
@@ -11,13 +14,15 @@ library(data.table)
 start_time <- Sys.time()
 #######################################
 
+setwd("C:/HotDam/")
+
 path1 <- here()
 Orig_file <- read.csv(file.path(path1,'NWIS_NOAA_NID_Eco_clean.csv'))
 
-path2 <- file.path(here(), 'Thermal_metrics.csv') # make copy of NWIS_NOAA_NID_Eco_clean.csv that can be edited
+path2 <- file.path(here(), 'Thermal_metrics_11262019.csv') # make copy of NWIS_NOAA_NID_Eco_clean.csv that can be edited
 write.csv(Orig_file, file = path2)
 
-Main_df <- read.csv(file.path(path1,'Thermal_metrics.csv'))
+Main_df <- read.csv(file.path(path1,'Thermal_metrics_11262019.csv'))
 
 #######################################
 #### Create Thermal Metric Columns #### 
@@ -164,8 +169,29 @@ tryCatch(
                   RcrdCnt <- analysis.df$pstRcrdCnt[1]
                   Main_df$NOAA_TmaxT[n] <- tmax_timing
                   Main_df$NOAA_TminT[n] <- tmin_timing
+                  
+                  tmax_tm_diff <- (Main_df$pstTmaxT[n] - tmax_timing)*(-1)
+                  if (tmax_tm_diff > 180){
+                    if (tmax_timing < Main_df$pstTmaxT[n]){
+                      tmax_timing = tmax_timing + 365
+                    }
+                    else {
+                      tmax_timing = tmax_timing - 365
+                    }
+                  }
                   Main_df$Lag_TmaxT[n] <-  Main_df$pstTmaxT[n] - tmax_timing
-                  Main_df$Lag_TminT[n] <- Main_df$pstTminT[n] - tmax_timing
+                  
+                  tmin_tm_diff <- (Main_df$pstTminT[n] - tmin_timing)*(-1)
+                  if (tmin_tm_diff > 180){
+                    if (tmin_timing < Main_df$pstTminT[n]){
+                      tmin_timing = tmin_timing + 365
+                    }
+                    else {
+                      tmin_timing = tmin_timing - 365
+                    }
+                  }
+                  Main_df$Lag_TminT[n] <- Main_df$pstTminT[n] - tmin_timing
+                  
                   Main_df$NOAARcrdCn[n] <- RcrdCnt
                 }
                 ,error = function(cond){

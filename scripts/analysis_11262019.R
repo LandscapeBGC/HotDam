@@ -18,21 +18,53 @@ start_time <- Sys.time()
 path1 <- here()
 Orig_file <- read.csv(file.path(path1,'NWIS_NOAA_NID_Eco_clean.csv'))
 
-path2 <- file.path(here(), 'Thermal_metrics_11262019.csv') # make copy of NWIS_NOAA_NID_Eco_clean.csv that can be edited
+path2 <- file.path(here(), 'Thermal_metrics_11272019.csv') # make copy of NWIS_NOAA_NID_Eco_clean.csv that can be edited
 write.csv(Orig_file, file = path2)
 
-Main_df <- read.csv(file.path(path1,'Thermal_metrics_11262019.csv'))
+Main_df <- read.csv(file.path(path1,'Thermal_metrics_11272019.csv'))
+
+##################################################
+#### Danielle's Cooling/Warming Rate function ####
+##################################################
+
+annual_rate <- function(df){
+  start <- 58 #end of feburary as to remove freeze period
+  max <- which.max(df$y) #row number of max value
+  end <- 365
+  # create df for each warming/cooling segement
+  warm_seg <- df[start:max,]
+  cool_seg <- df[max:end,]
+  
+  #linear fit to warming annual trend
+  warm_fit <- lm(warm_seg$y ~warm_seg$X)
+  warm_rate <- warm_fit[["coefficients"]][["warm_seg$X"]]
+  
+  #linear fit to cooling annual trend
+  cool_fit <- lm(cool_seg$y ~ cool_seg$X)
+  cool_rate <- cool_fit[["coefficients"]][["cool_seg$X"]]
+  
+  result  <- list(warm_rate_degpd = warm_rate, cool_rate_degpd = cool_rate)
+  
+  return(result)
+}
 
 #######################################
 #### Create Thermal Metric Columns #### 
 #######################################
 
 Main_df$pstRcrdCnt <- NA
+Main_df$pstP90 <- NA
+Main_df$pstP90Cnt <- NA
+Main_df$pstP50 <- NA
+Main_df$pstP10 <- NA
+Main_df$pstP10Cnt <- NA
 Main_df$pstTmax <- NA
 Main_df$pstTmin <- NA
 Main_df$pstTmean <- NA
 Main_df$pstTmaxT <- NA
 Main_df$pstTminT <- NA
+Main_df$pstCoolRt <- NA
+Main_df$pstWarmRt <- NA
 
 Main_df$preRcrdCnt <- NA
 Main_df$preTmax <- NA
@@ -78,16 +110,25 @@ for (n in 1:length(NWIS_Str)){
         tmean <- mean(analysis.df$y)
         tmax_timing <- analysis.df$x[which.max(analysis.df$y)]
         tmin_timing <- analysis.df$x[which.min(analysis.df$y)]
+        P90 <-qnorm(0.90,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
+        P50 <- qnorm(0.50,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
+        P10 <- qnorm(0.10,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
+        P10Cnt <- sum(analysis.df$y < P10)
+        P90Cnt <- sum(analysis.df$y > P10)
         RcrdCnt <- analysis.df$RcrdCnt[1]
         print(RcrdCnt)
         for (z in 1:nrow(Main_df)){
           if (NWIS_Str[n] == str_sub(Main_df$STAID_edt[z], start = 6)){
-            Main_df$pstRcrdCnt
             Main_df$pstTmax[z] <- tmax
             Main_df$pstTmin[z] <- tmin
             Main_df$pstTmean[z] <- tmean
             Main_df$pstTmaxT[z] <- tmax_timing
             Main_df$pstTminT[z] <- tmin_timing
+            Main_df$pstP90[z] <- P90
+            Main_df$pstP90Cnt[z] <- P90Cnt
+            Main_df$pstP50[z] <- P50
+            Main_df$pstP10[z] <- P10
+            Main_df$pstP10Cnt[z] <- P10Cnt
             Main_df$pstRcrdCnt[z] <- RcrdCnt
           }}},error = function(cond){
             message(paste0(NWIS_Str[n]))
