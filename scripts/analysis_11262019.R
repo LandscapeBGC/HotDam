@@ -18,10 +18,10 @@ start_time <- Sys.time()
 path1 <- here()
 Orig_file <- read.csv(file.path(path1,'NWIS_NOAA_NID_Eco_clean.csv'))
 
-path2 <- file.path(here(), 'Thermal_metrics_11272019.csv') # make copy of NWIS_NOAA_NID_Eco_clean.csv that can be edited
+path2 <- file.path(here(), 'Thermal_metrics_11282019.csv') # make copy of NWIS_NOAA_NID_Eco_clean.csv that can be edited
 write.csv(Orig_file, file = path2)
 
-Main_df <- read.csv(file.path(path1,'Thermal_metrics_11272019.csv'))
+Main_df <- read.csv(file.path(path1,'Thermal_metrics_11282019.csv'))
 
 ##################################################
 #### Danielle's Cooling/Warming Rate function ####
@@ -65,6 +65,9 @@ Main_df$pstTmaxT <- NA
 Main_df$pstTminT <- NA
 Main_df$pstCoolRt <- NA
 Main_df$pstWarmRt <- NA
+Main_df$pstCffcntVrtn <- NA
+Main_df$pstP25cnt <- NA
+Main_df$pstP75cnt <- NA
 
 Main_df$preRcrdCnt <- NA
 Main_df$preTmax <- NA
@@ -113,10 +116,14 @@ for (n in 1:length(NWIS_Str)){
         P90 <-qnorm(0.90,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
         P50 <- qnorm(0.50,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
         P10 <- qnorm(0.10,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
+        P75 <- qnorm(0.75,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
+        P25 <- qnorm(0.25,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
         P10Cnt <- sum(analysis.df$y < P10)
-        P90Cnt <- sum(analysis.df$y > P10)
+        P90Cnt <- sum(analysis.df$y > P90)
+        P25Cnt <- sum(analysis.df$y < P25)
+        P75Cnt <- sum(analysis.df$y > P75)
         RcrdCnt <- analysis.df$RcrdCnt[1]
-        print(RcrdCnt)
+        CoefficientVariation <- sd(analysis.df$y, na.rm = TRUE)/mean(analysis.df$y, na.rm = TRUE)
         for (z in 1:nrow(Main_df)){
           if (NWIS_Str[n] == str_sub(Main_df$STAID_edt[z], start = 6)){
             Main_df$pstTmax[z] <- tmax
@@ -130,6 +137,12 @@ for (n in 1:length(NWIS_Str)){
             Main_df$pstP10[z] <- P10
             Main_df$pstP10Cnt[z] <- P10Cnt
             Main_df$pstRcrdCnt[z] <- RcrdCnt
+            df <- analysis.df
+            Main_df$pstCoolRt[z] <- annual_rate(df)[2]
+            Main_df$pstWarmRt[z] <- annual_rate(df)[1]
+            Main_df$pstCffcntVrtn[z] <- CoefficientVariation 
+            Main_df$pstP25cnt[z] <- P25Cnt
+            Main_df$pstP75cnt[z] <- P75Cnt
           }}},error = function(cond){
             message(paste0(NWIS_Str[n]))
             return(NA)})}}
@@ -165,7 +178,6 @@ for (n in 1:length(NWIS_Str)){
         tmax_timing <- analysis.df$x[which.max(analysis.df$y)]
         tmin_timing <- analysis.df$x[which.min(analysis.df$y)]
         RcrdCnt <- analysis.df$RcrdCnt[1]
-        print(RcrdCnt)
         for (z in 1:nrow(Main_df)){
           if (NWIS_Str[n] == str_sub(Main_df$STAID_edt[z], start = 6)){
             Main_df$preTmax[z] <- tmax
@@ -276,13 +288,6 @@ Rfrnc_St_num <- as.list(Rfrnc_lst)
 NWIS_Str<- str_split(Main_df$STAID_edt, pattern = ",")
 NWIS_Str <- str_split(str_sub(NWIS_Str, start = 6), pattern = ",")
 
-Lngth = o
-for (n in 1:length(NWIS_Str)){
-  if (NWIS_Str[n] %in% Rfrnc_St_num == TRUE) {
-    Lngth = Lngth+1}}
-print(Lngth)
-
-Lngth=0
 for (n in 1:length(NWIS_Str)){
   if (NWIS_Str[n] %in% Rfrnc_St_num == TRUE) {
     tryCatch(
@@ -296,8 +301,17 @@ for (n in 1:length(NWIS_Str)){
         tmean <- mean(analysis.df$y)
         tmax_timing <- analysis.df$x[which.max(analysis.df$y)]
         tmin_timing <- analysis.df$x[which.min(analysis.df$y)]
+        P90 <- qnorm(0.90,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
+        P50 <- qnorm(0.50,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
+        P10 <- qnorm(0.10,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
+        P25 <- qnorm(0.25,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
+        P75 <- qnorm(0.75,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
+        P10Cnt <- sum(analysis.df$y < P10)
+        P90Cnt <- sum(analysis.df$y > P90)
+        P25Cnt <- sum(analysis.df$y < P25)
+        P75Cnt <- sum(analysis.df$y > P75)
         RcrdCnt <- analysis.df$pstRcrdCnt[1]
-        print(RcrdCnt)
+        CoefficientVariation <- sd(analysis.df$y, na.rm = TRUE)/mean(analysis.df$y, na.rm = TRUE)
         for (z in 1:nrow(Main_df)){
           if (NWIS_Str[n] == str_sub(Main_df$STAID_edt[z], start = 6)){
             Main_df$Ref[z] <- '1'
@@ -306,8 +320,18 @@ for (n in 1:length(NWIS_Str)){
             Main_df$pstTmaxT[z] <- tmax_timing
             Main_df$pstTminT[z] <- tmin_timing
             Main_df$pstTmean[z] <- tmean
+            Main_df$pstP90[z] <- P90
+            Main_df$pstP90Cnt[z] <- P90Cnt
+            Main_df$pstP50[z] <- P50
+            Main_df$pstP10[z] <- P10
+            Main_df$pstP10Cnt[z] <- P10Cnt
             Main_df$pstRcrdCnt[z] <- RcrdCnt
-            Lngth=Lngth+1
+            df <- analysis.df
+            Main_df$pstCoolRt[z] <- annual_rate(df)[2]
+            Main_df$pstWarmRt[z] <- annual_rate(df)[1]
+            Main_df$pstCffcntVrtn[z] <- CoefficientVariation
+            Main_df$pstP25cnt[z] <- P25Cnt
+            Main_df$pstP75cnt[z] <- P75Cnt
           }}},error = function(cond){
             message(paste0(NWIS_Str[n]))
             return(NA)})}
@@ -316,10 +340,12 @@ for (n in 1:length(NWIS_Str)){
   }
 }
 
+Main_df2 <- vapply(Main_df, paste, collapse = ", ", character(1L))
 
+df_Place2 = data.frame(lapply(Main_df, as.character), stringsAsFactors=FALSE)
 
 #######################################
-write.csv(Main_df, path2)
+write.csv(df_Place2, path2)
 #######################################
 end_time <- Sys.time()
 time <- end_time - start_time
