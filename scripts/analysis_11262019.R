@@ -18,10 +18,10 @@ start_time <- Sys.time()
 path1 <- here()
 Orig_file <- read.csv(file.path(path1,'NWIS_NOAA_NID_Eco_clean.csv'))
 
-path2 <- file.path(here(), 'Thermal_metrics_11282019.csv') # make copy of NWIS_NOAA_NID_Eco_clean.csv that can be edited
+path2 <- file.path(here(), 'Thermal_metrics_v2.csv') # make copy of NWIS_NOAA_NID_Eco_clean.csv that can be edited
 write.csv(Orig_file, file = path2)
 
-Main_df <- read.csv(file.path(path1,'Thermal_metrics_11282019.csv'))
+Main_df <- read.csv(file.path(path1,'Thermal_metrics_v2.csv'))
 
 ##################################################
 #### Danielle's Cooling/Warming Rate function ####
@@ -52,6 +52,7 @@ annual_rate <- function(df){
 #### Create Thermal Metric Columns #### 
 #######################################
 
+Main_df$PstSplnCnt <- NA
 Main_df$pstRcrdCnt <- NA
 Main_df$pstP90 <- NA
 Main_df$pstP90Cnt <- NA
@@ -69,6 +70,7 @@ Main_df$pstCffcntVrtn <- NA
 Main_df$pstP25cnt <- NA
 Main_df$pstP75cnt <- NA
 
+Main_df$PreSplnCnt <- NA
 Main_df$preRcrdCnt <- NA
 Main_df$preTmax <- NA
 Main_df$preTmin <- NA
@@ -76,18 +78,18 @@ Main_df$preTmean <- NA
 Main_df$preTmaxT <- NA
 Main_df$preTminT <- NA
 
+Main_df$NOAA_SplnCnt <- NA
 Main_df$NOAA_TmaxT <- NA
 Main_df$NOAA_TminT <- NA
 Main_df$Lag_TmaxT <- NA
 Main_df$Lag_TminT <- NA
 Main_df$NOAARcrdCn <- NA
 
-
 #########################################################
 #### Create Path + List of Post-Construction Records ####
 #########################################################
 
-path3 <- here('input/Dam_thermal_regimes_post')
+path3 <- here('input/Dam_thermal_regimes_post_v2')
 pstDam <- dir(path = path3, pattern = "*.csv")
 pstDam_lst <- str_sub(pstDam, end = -8)
 pstUSGs_St_num <- as.list(pstDam_lst) # create an iterable list of USGS gauges with post construction temperature data
@@ -103,7 +105,7 @@ for (n in 1:length(NWIS_Str)){
   if (NWIS_Str[n] %in% pstUSGs_St_num == TRUE) {
     tryCatch(
       expr = {
-        x <- c(file.path(here('input/Dam_thermal_regimes_post/xyxyxyxy_tr.csv')))
+        x <- c(file.path(here('input/Dam_thermal_regimes_post_v2/xyxyxyxy_tr.csv')))
         NWISsubstitution <- gsub("xyxyxyxy",NWIS_Str[n], x)
         print(NWISsubstitution)
         analysis.df <- read.csv(NWISsubstitution)
@@ -118,10 +120,11 @@ for (n in 1:length(NWIS_Str)){
         P10 <- qnorm(0.10,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
         P75 <- qnorm(0.75,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
         P25 <- qnorm(0.25,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
-        P10Cnt <- sum(analysis.df$y < P10)
-        P90Cnt <- sum(analysis.df$y > P90)
-        P25Cnt <- sum(analysis.df$y < P25)
-        P75Cnt <- sum(analysis.df$y > P75)
+        SplineCnt <- length(unique(analysis.df$x))
+        P10Cnt <- sum(analysis.df$y < P10)/SplineCnt
+        P90Cnt <- sum(analysis.df$y > P90)/SplineCnt
+        P25Cnt <- sum(analysis.df$y < P25)/SplineCnt
+        P75Cnt <- sum(analysis.df$y > P75)/SplineCnt
         RcrdCnt <- analysis.df$RcrdCnt[1]
         CoefficientVariation <- sd(analysis.df$y, na.rm = TRUE)/mean(analysis.df$y, na.rm = TRUE)
         for (z in 1:nrow(Main_df)){
@@ -143,6 +146,7 @@ for (n in 1:length(NWIS_Str)){
             Main_df$pstCffcntVrtn[z] <- CoefficientVariation 
             Main_df$pstP25cnt[z] <- P25Cnt
             Main_df$pstP75cnt[z] <- P75Cnt
+            Main_df$PstSplnCnt[z] <- SplineCnt
           }}},error = function(cond){
             message(paste0(NWIS_Str[n]))
             return(NA)})}}
@@ -151,7 +155,7 @@ for (n in 1:length(NWIS_Str)){
 #### Create Path + List of Pre-Construction Records ####
 ########################################################
 
-path4 <- here('input/Dam_thermal_regimes_pre')
+path4 <- here('input/Dam_thermal_regimes_pre_v2')
 preDam <- dir(path = path4, pattern = "*.csv")
 preDam_lst <- str_sub(preDam, end = -8)
 preUSGs_St_num <- as.list(preDam_lst) # create an iterable list of USGS gauges with post construction temperature data
@@ -167,7 +171,7 @@ for (n in 1:length(NWIS_Str)){
   if (NWIS_Str[n] %in% preUSGs_St_num == TRUE) {
     tryCatch(
       expr = {
-        x <- c(file.path(here('input/Dam_thermal_regimes_pre/xyxyxyxy_tr.csv')))
+        x <- c(file.path(here('input/Dam_thermal_regimes_pre_v2/xyxyxyxy_tr.csv')))
         NWISsubstitution <- gsub("xyxyxyxy",NWIS_Str[n], x)
         print(NWISsubstitution)
         analysis.df <- read.csv(NWISsubstitution)
@@ -178,6 +182,7 @@ for (n in 1:length(NWIS_Str)){
         tmax_timing <- analysis.df$x[which.max(analysis.df$y)]
         tmin_timing <- analysis.df$x[which.min(analysis.df$y)]
         RcrdCnt <- analysis.df$RcrdCnt[1]
+        SplineCnt <- length(unique(analysis.df$x))
         for (z in 1:nrow(Main_df)){
           if (NWIS_Str[n] == str_sub(Main_df$STAID_edt[z], start = 6)){
             Main_df$preTmax[z] <- tmax
@@ -186,6 +191,7 @@ for (n in 1:length(NWIS_Str)){
             Main_df$preTmaxT[z] <- tmax_timing
             Main_df$preTminT[z] <- tmin_timing
             Main_df$preRcrdCnt[z] <- RcrdCnt
+            Main_df$PreSplnCnt[z] <- SplineCnt
           }}},error = function(cond){
             message(paste0(NWIS_Str[n]))
             return(NA)})}}
@@ -223,6 +229,7 @@ tryCatch(
                   tmin <- min(analysis.df$y)
                   tmax_timing <- analysis.df$x[which.max(analysis.df$y)]
                   tmin_timing <- analysis.df$x[which.min(analysis.df$y)]
+                  Main_df$NOAASplnCnt[n] <- length(unique(analysis.df$x))
                   RcrdCnt <- analysis.df$pstRcrdCnt[1]
                   Main_df$NOAA_TmaxT[n] <- tmax_timing
                   Main_df$NOAA_TminT[n] <- tmin_timing
@@ -306,10 +313,11 @@ for (n in 1:length(NWIS_Str)){
         P10 <- qnorm(0.10,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
         P25 <- qnorm(0.25,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
         P75 <- qnorm(0.75,mean=mean(analysis.df$y, na.rm = TRUE),sd=sd(analysis.df$y, na.rm = TRUE))
-        P10Cnt <- sum(analysis.df$y < P10)
-        P90Cnt <- sum(analysis.df$y > P90)
-        P25Cnt <- sum(analysis.df$y < P25)
-        P75Cnt <- sum(analysis.df$y > P75)
+        SplineCnt <- length(unique(analysis.df$x))
+        P10Cnt <- sum(analysis.df$y < P10)/SplineCnt
+        P90Cnt <- sum(analysis.df$y > P90)/SplineCnt
+        P25Cnt <- sum(analysis.df$y < P25)/SplineCnt
+        P75Cnt <- sum(analysis.df$y > P75)/SplineCnt
         RcrdCnt <- analysis.df$pstRcrdCnt[1]
         CoefficientVariation <- sd(analysis.df$y, na.rm = TRUE)/mean(analysis.df$y, na.rm = TRUE)
         for (z in 1:nrow(Main_df)){
@@ -332,6 +340,7 @@ for (n in 1:length(NWIS_Str)){
             Main_df$pstCffcntVrtn[z] <- CoefficientVariation
             Main_df$pstP25cnt[z] <- P25Cnt
             Main_df$pstP75cnt[z] <- P75Cnt
+            Main_df$PstSplnCnt[z] <- SplineCnt
           }}},error = function(cond){
             message(paste0(NWIS_Str[n]))
             return(NA)})}
