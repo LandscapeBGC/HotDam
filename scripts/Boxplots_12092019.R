@@ -35,14 +35,18 @@ for (metric in coln){
   ggboxplot(df, x = "Clim_Reg", y = metric,
             color = "Ref", palette = "Set1",
             add = "jitter")+ 
-    stat_compare_means(aes(group = df$Ref), 
-                       label = "p.format")+
-    ggtitle(metric)
+    stat_compare_means(mapping = aes(group = df$Ref), #method = "t.test",
+                       label = "p.format", size = 3)+
+    ggtitle(metric)+
+    theme(axis.text.x = element_text(size = 10), axis.text.y = element_text(size = 10),
+          axis.text = element_text(angle = 60, hjust = 1))
   
   fn <- paste0(metric, ".png")
   ggsave(fn, path = file.path(path1,'results/figures'), device = "png")
   
 }
+
+
 #### Tmin ####
 
 p2<- ggplot(df, aes(x=df$NA_L1KEY, y=df$pstTmin, fill=df$Ref)) + 
