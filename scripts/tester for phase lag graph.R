@@ -21,20 +21,20 @@ for (h in 1:length(df)){
   usgs <- str_split(str_sub(usgs, start = 6) , pattern = ",")
   usgs <- paste0(usgs, "_tr", ".csv")
   noaa <- df$NOAA_ID
-  noaa <- paste0(noaa, "_tr", ".csv")
+  noaa <- paste0(noaa, ".csv")
   tryCatch(
     expr = {
-      setwd("~/HotDam3/input/Dam_thermal_regimes")
+      setwd("~/HotDam3/input/Dam_thermal_regimes_post_v2")
       dam_data <- read.csv(usgs[h], header = TRUE, stringsAsFactors = FALSE)
       setwd("~/HotDam3/input/NOAA_thermal_regimes")
       noaa_data <- read.csv(noaa[h], header = TRUE, stringsAsFactors = FALSE)
       phase_plot <- ggplot(dam_data, aes(x=dam_data$X, y=dam_data$y)) + 
-        geom_line() +
+        geom_line(color = "blue") +
         geom_line(data = noaa_data, aes(x = noaa_data$X, y = noaa_data$y), color = "red") +
-        labs(title = usgs[h])
+        labs(title = paste0(usgs[h]," , ", noaa[h]))
       
       setwd("~/HotDam3/results/figures/phase_lag")
-      ggsave(paste0(usgs[h], "_phase", ".png"))
+      ggsave(paste0(usgs[h]," , ", noaa[h], "_phase", ".png"))
     },
     error = function(cond){
       message(paste0(usgs[h], ",", noaa[h]))
