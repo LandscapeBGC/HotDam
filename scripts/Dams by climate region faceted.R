@@ -1,5 +1,5 @@
 ### Dam type by region
-### by Eric Moore
+### by Eric Moore 
 ### for the HotDam project
 
 ###libraries
